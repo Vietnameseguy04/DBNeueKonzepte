@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>DynamoDB Bibliothek – Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; }
+
+    header {
+      background: #232f3e;
+      color: white;
+      padding: 16px 24px;
+    }
+    header h1 { font-size: 1.4em; margin-bottom: 4px; }
+    header p { font-size: 0.85em; color: #aaa; }
+
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .badge {
+      background: #ff9900; color: white;
+      font-size: 0.75em; padding: 2px 10px; border-radius: 12px;
+    }
+
+    main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+
+    .card {
+      background: white; border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+      margin-bottom: 20px; overflow: hidden;
+    }
+    .card-header {
+      background: #232f3e; color: white;
+      padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+    }
+    .card-header .num {
+      background: #ff9900; color: white;
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 0.85em; flex-shrink: 0;
+    }
+    .card-header h2 { font-size: 1em; }
+    .card-body { padding: 16px; }
+
+    /* Befehle-Karten */
+    .cmd-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .cmd-item {
+      border-left: 4px solid #ff9900; background: #fafafa;
+      padding: 10px 12px; border-radius: 0 6px 6px 0;
+    }
+    .cmd-item .cmd-name {
+      font-family: monospace; font-weight: bold;
+      color: #232f3e; font-size: 0.95em;
+    }
+    .cmd-item .cmd-desc { font-size: 0.8em; color: #555; margin-top: 3px; }
+    .cmd-item .cmd-type {
+      font-size: 0.7em; margin-top: 4px;
+      color: white; padding: 1px 7px; border-radius: 10px;
+      display: inline-block;
+    }
+    .write { background: #2e7d32; }
+    .read  { background: #1565c0; }
+    .scan  { background: #b71c1c; }
+
+    /* Forms */
+    .form-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+    input[type="text"] {
+      padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px;
+      font-size: 0.9em; flex: 1; min-width: 140px; max-width: 260px;
+    }
+    label { font-size: 0.8em; color: #555; display: block; margin-bottom: 2px; }
+    .hint { font-size: 0.75em; color: #888; margin: 4px 0 8px; }
+
+    button {
+      padding: 7px 14px; border: none; border-radius: 4px;
+      cursor: pointer; font-size: 0.85em; font-weight: bold;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    .btn-primary { background: #ff9900; color: white; }
+    .btn-dark    { background: #232f3e; color: white; }
+    .btn-danger  { background: #cc3300; color: white; }
+    .btn-green   { background: #2e7d32; color: white; }
+
+    .section-title {
+      font-size: 0.9em; font-weight: bold; color: #232f3e;
+      margin: 16px 0 8px; border-bottom: 1px solid #eee; padding-bottom: 4px;
+    }
+
+    .id-box {
+      background: #fffde7; border: 1px solid #ffe082;
+      border-radius: 4px; padding: 6px 10px;
+      font-family: monospace; font-size: 0.8em; color: #555;
+      margin-top: 6px; word-break: break-all;
+    }
+    .id-box strong { color: #232f3e; }
+
+    .output {
+      background: #1e2a3a; color: #64b5f6;
+      font-family: monospace; font-size: 0.8em;
+      padding: 12px; border-radius: 4px;
+      white-space: pre-wrap; min-height: 36px;
+      margin-top: 8px; word-break: break-all;
+    }
+    .output.success { border-left: 3px solid #4caf50; }
+    .output.error   { border-left: 3px solid #f44336; color: #ef9a9a; }
+
+    /* Chain visualization */
+    .chain-visual {
+      display: flex; gap: 6px; align-items: center;
+      flex-wrap: wrap; margin: 10px 0;
+    }
+    .chain-node {
+      background: #232f3e; color: #ff9900;
+      padding: 4px 12px; border-radius: 4px;
+      font-size: 0.8em; font-weight: bold;
+    }
+    .chain-arrow { color: #888; font-size: 1.1em; }
+
+    /* Aggregation */
+    .stat-box {
+      background: #e8f5e9; border: 2px solid #4caf50;
+      border-radius: 8px; padding: 16px; text-align: center; margin-top: 10px;
+    }
+    .stat-num { font-size: 2.5em; font-weight: bold; color: #2e7d32; }
+    .stat-label { color: #555; font-size: 0.9em; margin-top: 4px; }
+
+    /* Book table */
+    table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 8px; }
+    th { background: #232f3e; color: white; padding: 8px 10px; text-align: left; }
+    td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+    tr:hover td { background: #f9f9f9; }
+
+    .vs-box {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;
+    }
+    .vs-query { border-left: 4px solid #4caf50; background: #f1f8e9; padding: 12px; border-radius: 0 6px 6px 0; }
+    .vs-scan  { border-left: 4px solid #f44336; background: #ffebee; padding: 12px; border-radius: 0 6px 6px 0; }
+    .vs-title { font-weight: bold; font-size: 0.95em; margin-bottom: 5px; }
+    .vs-text  { font-size: 0.8em; color: #444; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>DynamoDB Bibliothek – Demo</h1>
+  <p>Region: eu-north-1 &nbsp;|&nbsp; Backend: http://localhost:3000</p>
+  <div class="badges">
+    <span class="badge">Authors · AuthorId (S)</span>
+    <span class="badge">Books · BookId (S)</span>
+    <span class="badge">Loans · LoanId (S)</span>
+    <span class="badge">Users · UserId (S)</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============================================================
+       1. BEFEHLE
+       ============================================================ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">1</div>
+      <h2>DynamoDB Grundbefehle</h2>
+    </div>
+    <div class="card-body">
+      <div class="cmd-grid">
+        <div class="cmd-item">
+          <div class="cmd-name">PutItem</div>
+          <div class="cmd-desc">Speichert ein neues Dokument (oder überschreibt)</div>
+          <span class="cmd-type write">WRITE</span>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">GetItem</div>
+          <div class="cmd-desc">Holt ein Dokument per Partition Key – sehr schnell</div>
+          <span class="cmd-type read">READ</span>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">UpdateItem</div>
+          <div class="cmd-desc">Ändert einzelne Attribute eines vorhandenen Dokuments</div>
+          <span class="cmd-type write">WRITE</span>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">DeleteItem</div>
+          <div class="cmd-desc">Löscht ein Dokument per Partition Key</div>
+          <span class="cmd-type write">WRITE</span>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">Query</div>
+          <div class="cmd-desc">Gezieltes Suchen mit Partition Key – effizient</div>
+          <span class="cmd-type read">READ</span>
+        </div>
+        <div class="cmd-item">
+          <div class="cmd-name">Scan</div>
+          <div class="cmd-desc">Liest alle Items der Tabelle – langsam, nur wenn nötig</div>
+          <span class="cmd-type scan">SCAN</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       2. BENUTZER
+       ============================================================ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">2</div>
+      <h2>Benutzer anlegen (PutItem → Users)</h2>
+    </div>
+    <div class="card-body">
+      <div class="form-row">
+        <div>
+          <label>Name</label>
+          <input type="text" id="userName" placeholder="z.B. Max Müller">
+        </div>
+        <button class="btn-primary" onclick="createUser()">Anlegen</button>
+      </div>
+      <div class="output" id="userOutput">– Ausgabe erscheint hier –</div>
+      <div class="id-box" id="userIdBox" style="display:none">
+        <strong>UserId (für Ausleihe kopieren):</strong> <span id="lastUserId"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       3. AUTOR
+       ============================================================ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">3</div>
+      <h2>Autor anlegen (PutItem → Authors)</h2>
+    </div>
+    <div class="card-body">
+      <div class="form-row">
+        <div>
+          <label>Name</label>
+          <input type="text" id="authorName" placeholder="z.B. J.K. Rowling">
+        </div>
+        <button class="btn-primary" onclick="createAuthor()">Anlegen</button>
+      </div>
+      <div class="output" id="authorOutput">– Ausgabe erscheint hier –</div>
+      <div class="id-box" id="authorIdBox" style="display:none">
+        <strong>AuthorId (für Buch kopieren):</strong> <span id="lastAuthorId"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       4. BÜCHER – CRUD
+       ============================================================ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">4</div>
+      <h2>Buch – Erfassen, Ändern, Löschen, Suchen (CRUD)</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="section-title">Buch anlegen (PutItem)</div>
+      <div class="form-row">
+        <div>
+          <label>Titel</label>
+          <input type="text" id="bookTitle" placeholder="z.B. Harry Potter">
+        </div>
+        <div>
+          <label>AuthorId</label>
+          <input type="text" id="bookAuthorId" placeholder="aus Schritt 3 kopieren">
+        </div>
+        <button class="btn-primary" onclick="createBook()">Anlegen</button>
+      </div>
+      <div class="output" id="createBookOutput">–</div>
+      <div class="id-box" id="bookIdBox" style="display:none">
+        <strong>BookId (für Ausleihe/Ändern/Löschen kopieren):</strong> <span id="lastBookId"></span>
+      </div>
+
+      <div class="section-title">Buch abrufen (GetItem)</div>
+      <div class="form-row">
+        <div>
+          <label>BookId</label>
+          <input type="text" id="getBookId" placeholder="BookId eingeben">
+        </div>
+        <button class="btn-dark" onclick="getBook()">Abrufen</button>
+      </div>
+      <div class="output" id="getBookOutput">–</div>
+
+      <div class="section-title">Buch ändern (UpdateItem)</div>
+      <div class="form-row">
+        <div>
+          <label>BookId</label>
+          <input type="text" id="updateBookId" placeholder="BookId eingeben">
+        </div>
+        <div>
+          <label>Neuer Titel</label>
+          <input type="text" id="updateBookTitle" placeholder="Neuer Titel">
+        </div>
+        <button class="btn-dark" onclick="updateBook()">Ändern</button>
+      </div>
+      <div class="output" id="updateBookOutput">–</div>
+
+      <div class="section-title">Buch löschen (DeleteItem)</div>
+      <div class="form-row">
+        <div>
+          <label>BookId</label>
+          <input type="text" id="deleteBookId" placeholder="BookId eingeben">
+        </div>
+        <button class="btn-danger" onclick="deleteBook()">Löschen</button>
+      </div>
+      <div class="output" id="deleteBookOutput">–</div>
+
+      <div class="section-title">Alle Bücher anzeigen (Scan)</div>
+      <button class="btn-dark" onclick="loadBooks()">Alle Bücher laden</button>
+      <div id="bookTableWrap"></div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================
+       5. AUSLEIHE
+       ============================================================ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">5</div>
+      <h2>Ausleihe anlegen (PutItem → Loans)</h2>
+    </div>
+    <div class="card-body">
+      <div class="form-row">
+        <div>
+          <label>UserId</label>
+          <input type="text" id="loanUserId" placeholder="aus Schritt 2 kopieren">
+        </div>
+        <div>
+          <label>BookId</label>
+          <input type="text" id="loanBookId" placeholder="aus Schritt 4 kopieren">
+        </div>
+        <button class="btn-primary" onclick="createLoan()">Ausleihe anlegen</button>
+      </div>
+      <div class="output" id="loanOutput">–</div>
+      <div class="id-box" id="loanIdBox" style="display:none">
+        <strong>LoanId (für 4er-Kette kopieren):</strong> <span id="lastLoanId"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       6. 4ER-KETTE
+       ============================================================ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">6</div>
+      <h2>Dokumentverknüpfung – 4er-Kette</h2>
+    </div>
+    <div class="card-body">
+      <div class="chain-visual">
+        <div class="chain-node">Benutzer</div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-node">Ausleihe</div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-node">Buch</div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-node">Autor</div>
+      </div>
+      <p class="hint">4 × GetItem – jede ID wird aus dem vorherigen Dokument weitergereicht</p>
+      <div class="form-row">
+        <div>
+          <label>LoanId</label>
+          <input type="text" id="chainLoanId" placeholder="aus Schritt 5 kopieren">
+        </div>
+        <button class="btn-green" onclick="getChain()">Kette abrufen</button>
+      </div>
+      <div class="output" id="chainOutput">–</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       7. AGGREGATION
+       ============================================================ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">7</div>
+      <h2>Aggregation – Scan mit FilterExpression</h2>
+    </div>
+    <div class="card-body">
+      <p style="font-size:0.85em;color:#555;margin-bottom:10px">
+        Zählt alle Ausleihen mit <code>status = "borrowed"</code> in der Tabelle <strong>Loans</strong>.
+        DynamoDB scannt die gesamte Tabelle und filtert dann per <code>FilterExpression</code>.
+      </p>
+      <p class="hint">Hinweis: "status" ist ein reserviertes Wort in DynamoDB → ExpressionAttributeNames (#st) nötig</p>
+      <button class="btn-green" onclick="countBorrowed()">Auswertung starten</button>
+      <div id="statDisplay"></div>
+      <div class="output" id="statsOutput" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       8. QUERY vs. SCAN
+       ============================================================ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">8</div>
+      <h2>Query vs. Scan</h2>
+    </div>
+    <div class="card-body">
+      <div class="vs-box">
+        <div class="vs-query">
+          <div class="vs-title">Query – gezielt suchen</div>
+          <div class="vs-text">
+            Nutzt den Partition Key direkt.<br>
+            Holt nur passende Daten – schnell &amp; effizient.<br><br>
+            <em>Beispiel: Alle Bücher eines Autors</em><br>
+            → DynamoDB geht direkt zu diesen Daten.
+          </div>
+        </div>
+        <div class="vs-scan">
+          <div class="vs-title">Scan – alles durchsuchen</div>
+          <div class="vs-text">
+            Liest die komplette Tabelle.<br>
+            Prüft jedes Item – langsam &amp; teuer.<br><br>
+            <em>Beispiel: Alle ausgeliehenen Bücher zählen</em><br>
+            → DynamoDB schaut jedes Item einzeln an.
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:12px;font-size:0.82em;color:#555">
+        <strong>Merksatz:</strong> Query ist wie Google mit Suchbegriff – Scan ist wie jedes Buch im Regal einzeln durchblättern.
+      </p>
+    </div>
+  </div>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
