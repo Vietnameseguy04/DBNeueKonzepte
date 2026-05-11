@@ -1,3 +1,7 @@
+
+
+/* Marieke Hekers und Anton */
+
 const API = "http://localhost:3000/api";
 
 /* ---------- Helpers ---------- */
@@ -57,7 +61,9 @@ function setIdBox(boxId, spanId, value) {
   document.getElementById(boxId).style.display = "";
 }
 
-/* ---------- Users ---------- */
+
+
+/* Anton Nguyen */
 
 async function createUser() {
   const name = val("userName", "Name", "userOutput");
@@ -68,8 +74,6 @@ async function createUser() {
   if (data.success) setIdBox("userIdBox", "lastUserId", data.data.UserId);
 }
 
-/* ---------- Authors ---------- */
-
 async function createAuthor() {
   const name = val("authorName", "Name", "authorOutput");
   if (!name) return;
@@ -78,8 +82,6 @@ async function createAuthor() {
   show("authorOutput", data, !data.success);
   if (data.success) setIdBox("authorIdBox", "lastAuthorId", data.data.AuthorId);
 }
-
-/* ---------- Books – CRUD ---------- */
 
 async function createBook() {
   const title    = val("bookTitle",    "Titel",    "createBookOutput");
@@ -146,8 +148,6 @@ async function loadBooks() {
   wrap.innerHTML = html;
 }
 
-/* ---------- Loans ---------- */
-
 async function createLoan() {
   const userId = val("loanUserId", "UserId", "loanOutput");
   const bookId = val("loanBookId", "BookId", "loanOutput");
@@ -158,6 +158,8 @@ async function createLoan() {
   if (data.success) setIdBox("loanIdBox", "lastLoanId", data.data.LoanId);
 }
 
+
+/* Marieke Hekers */
 /* ---------- 4er-Kette ---------- */
 
 async function getChain() {

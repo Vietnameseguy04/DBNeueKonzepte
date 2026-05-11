@@ -1,3 +1,8 @@
+
+
+/* Anton Nguyen (CRUD-Operationen und einfache Dokumentenverknüpfung) */
+
+
 const dynamo = require("../db/dynamo");
 
 const USERS = "Users";
@@ -15,9 +20,7 @@ async function fetchItem(table, key) {
   return result.Item || null;
 }
 
-/* ================================================================
-   USERS
-   ================================================================ */
+/*User*/
 exports.createUser = async (req, res) => {
   try {
     const name = (req.body.name || "").trim();
@@ -29,9 +32,7 @@ exports.createUser = async (req, res) => {
   } catch (e) { fail(res, e); }
 };
 
-/* ================================================================
-   AUTHORS
-   ================================================================ */
+/*Author*/
 exports.createAuthor = async (req, res) => {
   try {
     const name = (req.body.name || "").trim();
@@ -43,11 +44,9 @@ exports.createAuthor = async (req, res) => {
   } catch (e) { fail(res, e); }
 };
 
-/* ================================================================
-   BOOKS – vollständiges CRUD
-   ================================================================ */
+/*Books*/
 
-// PutItem – Buch anlegen
+// PutItem
 exports.createBook = async (req, res) => {
   try {
     const title    = (req.body.title    || "").trim();
@@ -55,7 +54,7 @@ exports.createBook = async (req, res) => {
 
     if (!title)    return badReq(res, "Feld 'title' darf nicht leer sein.");
     if (!authorId) return badReq(res, "Feld 'authorId' darf nicht leer sein.");
-
+    //document linking ()
     const author = await fetchItem(AUTHORS, { AuthorId: authorId });
     if (!author) return notFound(res, `Autor mit AuthorId "${authorId}" existiert nicht in der Tabelle Authors.`);
 
@@ -65,7 +64,7 @@ exports.createBook = async (req, res) => {
   } catch (e) { fail(res, e); }
 };
 
-// GetItem – einzelnes Buch per ID abrufen
+// GetItem
 exports.getBook = async (req, res) => {
   try {
     const item = await fetchItem(BOOKS, { BookId: req.params.id });
@@ -74,7 +73,6 @@ exports.getBook = async (req, res) => {
   } catch (e) { fail(res, e); }
 };
 
-// Scan – alle Bücher auflisten
 exports.scanBooks = async (req, res) => {
   try {
     const result = await dynamo.scan({ TableName: BOOKS }).promise();
@@ -82,7 +80,7 @@ exports.scanBooks = async (req, res) => {
   } catch (e) { fail(res, e); }
 };
 
-// UpdateItem – Buchtitel ändern
+
 exports.updateBook = async (req, res) => {
   try {
     const title = (req.body.title || "").trim();
@@ -102,7 +100,7 @@ exports.updateBook = async (req, res) => {
   } catch (e) { fail(res, e); }
 };
 
-// DeleteItem – Buch löschen
+
 exports.deleteBook = async (req, res) => {
   try {
     const existing = await fetchItem(BOOKS, { BookId: req.params.id });
@@ -113,9 +111,7 @@ exports.deleteBook = async (req, res) => {
   } catch (e) { fail(res, e); }
 };
 
-/* ================================================================
-   LOANS
-   ================================================================ */
+/* LOANS*/
 exports.createLoan = async (req, res) => {
   try {
     const userId = (req.body.userId || "").trim();
@@ -126,7 +122,7 @@ exports.createLoan = async (req, res) => {
 
     const user = await fetchItem(USERS, { UserId: userId });
     if (!user) return notFound(res, `Benutzer mit UserId "${userId}" existiert nicht in der Tabelle Users.`);
-
+    //document linking ()
     const book = await fetchItem(BOOKS, { BookId: bookId });
     if (!book) return notFound(res, `Buch mit BookId "${bookId}" existiert nicht in der Tabelle Books.`);
 
@@ -136,8 +132,11 @@ exports.createLoan = async (req, res) => {
   } catch (e) { fail(res, e); }
 };
 
+
+
+
 /* ================================================================
-   4ER-KETTE
+   4ER-KETTE Marieke Hekers
    Benutzer → Ausleihe → Buch → Autor – 4 × GetItem
    ================================================================ */
 exports.getChain = async (req, res) => {
